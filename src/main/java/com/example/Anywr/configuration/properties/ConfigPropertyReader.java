@@ -32,8 +32,8 @@ public class ConfigPropertyReader {
     //jwt config
     @Value("${anywr.jwt.secretKey}")
     private String secretKey;
-    @Value("${anywr.jwt.tokenExpirationAfterMinutes}")
-    private Duration tokenExpirationAfterMinutes;
+    @Value("${anywr.jwt.expiration}")
+    private Duration tokenExpiration;
     @Value("${anywr.jwt.tokenPrefix}")
     private String tokenPrefix;
 
