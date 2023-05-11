@@ -23,6 +23,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -60,7 +61,7 @@ public class Controller {
             @RequestParam(value = "pageNumber", defaultValue = "0") Integer pageNumber,
             @Parameter(name = "pageSize", description = "Specifies the number of students returned per page, default 10", in = ParameterIn.QUERY)
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-            @RequestHeader(value="token") String token,
+            @RequestHeader(value = "token") String token,
             HttpServletRequest request) throws Exception {
         try {
             StudentsResponse response;
@@ -68,8 +69,8 @@ public class Controller {
 
 //            String token = authorizationHeader.substring(7);
 //            String username = jwtTokenUtil.getUsernameFromToken(token);
-//
 //            return ResponseEntity.ok(new JwtResponse(username));
+
             List<Students> students = studentService.getStudents(className, teachersFirstName, teacherLastName, pageNumber, pageSize);
 
             response = StudentsResponse.GetStudentsBuilder()
@@ -93,9 +94,10 @@ public class Controller {
     public ResponseEntity<?> auth(
             @RequestBody AuthenticationRequest authenticationRequest,
             HttpServletRequest request) throws Exception {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
 
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
         User user = userDetailsService.loadByUsername(authenticationRequest.getUsername());
+
         UserDetails details = new UserDetails() {
             @Override
             public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -132,8 +134,8 @@ public class Controller {
                 return true;
             }
         };
-        final String token = utils.generateToken(details);
 
+        final String token = utils.generateToken(details);
         return ResponseEntity.ok(new AuthenticationResponse(token));
     }
 }
