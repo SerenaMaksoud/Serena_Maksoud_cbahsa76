@@ -30,8 +30,4 @@ CREATE TABLE `anywr`.`user` (
   `id` BIGINT(20) NOT NULL,
   `username` VARCHAR(45) NULL,
   `password` VARCHAR(45) NULL,
-  `token` VARCHAR(255) NULL,
-  `role` VARCHAR(45) NULL ,
-  `first_name` VARCHAR(45) NULL,
-  `last_name` VARCHAR(45) NULL,
   PRIMARY KEY (`id`));
