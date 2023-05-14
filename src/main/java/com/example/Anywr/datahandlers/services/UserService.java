@@ -1,8 +1,10 @@
 package com.example.Anywr.datahandlers.services;
 
 import com.example.Anywr.datahandlers.models.User;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public interface UserService {
-//    User save(User user);
-    User loadByUsername(String username);
+    void saveUser(User user);
+
+    UserDetails loadUser(String username, String password);
 }

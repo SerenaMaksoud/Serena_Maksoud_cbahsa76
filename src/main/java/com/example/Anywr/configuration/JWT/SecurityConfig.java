@@ -21,15 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-
-    @Autowired
     private JwtRequestFilter jwtRequestFilter;
-
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService()).passwordEncoder(passwordEncoder());
-    }
 
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
@@ -37,7 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests().antMatchers("/**").permitAll()
                 .antMatchers(HttpMethod.GET, "**").hasAnyRole("USER", "ADMIN")
                 .anyRequest().authenticated().and()
-                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
+//                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         httpSecurity.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
     }
@@ -48,12 +40,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        UserDetails user = User.withUsername("user").password("{noop}password").roles("USER").build();
-//        UserDetails admin = User.withUsername("admin").password("{noop}password").roles("USER", "ADMIN").build();
-//        return new InMemoryUserDetailsManager(user, admin);
-//    }
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+                .inMemoryAuthentication()
+                .withUser("user").password("password").roles("USER");
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

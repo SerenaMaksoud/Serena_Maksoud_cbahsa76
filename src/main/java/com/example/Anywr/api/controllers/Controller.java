@@ -3,11 +3,12 @@ package com.example.Anywr.api.controllers;
 import com.example.Anywr.configuration.JWT.JwtTokenUtil;
 import com.example.Anywr.datahandlers.models.AuthenticationRequest;
 import com.example.Anywr.datahandlers.models.Responses.AuthenticationResponse;
+import com.example.Anywr.datahandlers.models.Responses.BaseResponse;
 import com.example.Anywr.datahandlers.models.Responses.StudentsResponse;
-import com.example.Anywr.datahandlers.models.Students;
-import com.example.Anywr.datahandlers.models.User;
+import com.example.Anywr.datahandlers.models.Student;
 import com.example.Anywr.datahandlers.services.Impl.UserServiceImpl;
 import com.example.Anywr.datahandlers.services.StudentService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -18,15 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @RestController("Controller")
@@ -35,7 +34,7 @@ import java.util.List;
 public class Controller {
     @Resource
     private StudentService studentService;
-    @Resource
+    @Autowired
     private AuthenticationManager authenticationManager;
     @Resource
     private JwtTokenUtil utils;
@@ -65,13 +64,12 @@ public class Controller {
             HttpServletRequest request) throws Exception {
         try {
             StudentsResponse response;
-            // due to an error in authentication, authorization is disabled for testing purposes
 
-//            String token = authorizationHeader.substring(7);
-//            String username = jwtTokenUtil.getUsernameFromToken(token);
-//            return ResponseEntity.ok(new JwtResponse(username));
+            String username = utils.getUsernameFromToken(token);
+            if (username == null)
+                throw new Exception("Invalid Token");
 
-            List<Students> students = studentService.getStudents(className, teachersFirstName, teacherLastName, pageNumber, pageSize);
+            List<Student> students = studentService.getStudents(className, teachersFirstName, teacherLastName, pageNumber, pageSize);
 
             response = StudentsResponse.GetStudentsBuilder()
                     .status(0)
@@ -92,50 +90,25 @@ public class Controller {
                     content = @Content)})
     @RequestMapping(value = "/auth", method = RequestMethod.POST)
     public ResponseEntity<?> auth(
-            @RequestBody AuthenticationRequest authenticationRequest,
-            HttpServletRequest request) throws Exception {
+            @RequestBody AuthenticationRequest authenticationRequest) throws Exception {
+        try {
+            //Get user (if exist) orm the database
+            final UserDetails userDetails = userDetailsService.loadUser(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
-        User user = userDetailsService.loadByUsername(authenticationRequest.getUsername());
+            final String token = utils.generateToken(userDetails);
 
-        UserDetails details = new UserDetails() {
-            @Override
-            public Collection<? extends GrantedAuthority> getAuthorities() {
-                return null;
-            }
+            return ResponseEntity.ok(new AuthenticationResponse(token));
+        } catch (Exception e) {
+            return getInternalServerErrorResponseAsJson(e.getMessage());
+        }
+    }
 
-            @Override
-            public String getPassword() {
-                return user.getPassword();
-            }
-
-            @Override
-            public String getUsername() {
-                return user.getUsername();
-            }
-
-            @Override
-            public boolean isAccountNonExpired() {
-                return true;
-            }
-
-            @Override
-            public boolean isAccountNonLocked() {
-                return true;
-            }
-
-            @Override
-            public boolean isCredentialsNonExpired() {
-                return true;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-        };
-
-        final String token = utils.generateToken(details);
-        return ResponseEntity.ok(new AuthenticationResponse(token));
+    public ResponseEntity<?> getInternalServerErrorResponseAsJson(String message) throws JsonProcessingException, UnsupportedEncodingException {
+        BaseResponse resp;
+        resp = BaseResponse.builder().
+                status(-1)
+                .message(message)
+                .build();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
     }
 }
